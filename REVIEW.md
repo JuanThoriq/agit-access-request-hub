@@ -1,6 +1,6 @@
 # REVIEW — self review production readiness
 
-Ditinjau setelah Phase 1 selesai, dengan semua test hijau (`dotnet test` → 31 passed).
+Ditinjau setelah Phase 1 selesai, dengan semua test hijau (`dotnet test` → 32 passed).
 Kolom **Evidence** menunjuk test atau perintah yang membuktikan status, bukan opini.
 
 ## Temuan dan tindakan
@@ -25,6 +25,7 @@ Kolom **Evidence** menunjuk test atau perintah yang membuktikan status, bukan op
 | R-16 | CSRF | Tidak ada proteksi CSRF | Info | Tidak diperlukan: identitas lewat header `X-Demo-User`, bukan cookie, jadi browser tidak bisa mengirim kredensial otomatis | Verified | `frontend/src/lib/api.ts`, `api/src/AccessRequestHub.Api/Middleware/CurrentUserMiddleware.cs` |
 | R-17 | Struktur | `Application` mereferensikan `Infrastructure` (bukan sebaliknya) agar use case bisa memakai `AppDbContext` langsung tanpa repository generik | Low | Accepted: query-nya adalah fiturnya; abstraksi tambahan hanya memindahkan kode EF satu folder. Titik ganti sumber data tetap jelas (`Infrastructure`) | Accepted | `api/src/AccessRequestHub.Application/Features/Requests/*` |
 | R-18 | Frontend | Animasi GSAP menyetel `opacity:0` di awal; tab background tidak menjalankan `requestAnimationFrame`, sehingga konten bisa tampak kosong | Medium | Animasi hanya dijalankan saat `document.visibilityState === 'visible'` dan tidak saat `prefers-reduced-motion` | Fixed | `frontend/src/lib/motion.ts`, dicek di browser (`timelineOpacity` 0 → 1) |
+| R-19 | Testing | `MissingOrUnknownIdentity_IsUnauthorized` ditulis tanpa atribut `[Fact]`, jadi xUnit tidak pernah menjalankannya — identitas demo tidak benar-benar teruji meski test lain hijau | Medium | Ditambahkan `[Fact]`; test lulus, jumlah test jadi 32 | Fixed | `dotnet test` → 32 passed; `api/tests/AccessRequestHub.Tests/AuthorizationTests.cs` |
 
 ## Yang sengaja tidak dikerjakan (deferred)
 
@@ -57,4 +58,4 @@ Kolom **Evidence** menunjuk test atau perintah yang membuktikan status, bukan op
 | Logging cukup untuk menelusuri request | Ya (method, path, status, durasi, user, traceId) |
 | Health endpoint | Ya (`GET /health`) |
 | Invariant kritis dijaga database | Ya (UNIQUE, CHECK, FK, trigger) |
-| Perilaku kritis punya test | Ya (31 integration test) |
+| Perilaku kritis punya test | Ya (32 integration test) |

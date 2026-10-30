@@ -147,6 +147,7 @@ public class AuthorizationTests
         Assert.Equal("manager_not_configured", await response.ReadCode());
     }
 
+    [Fact]
     public async Task MissingOrUnknownIdentity_IsUnauthorized()
     {
         await using var app = AppHarness.Start();

@@ -53,7 +53,7 @@ Yang dicatat di sini bukan "AI menulis kode", tapi **keputusan mana yang berubah
   logika otorisasi tersebar di dua tempat. Dipilih Vite + React + TypeScript (SPA statis, satu
   trust boundary). Konsekuensinya dicatat di `PLAN.md` §2.
 
-## Three things AI got wrong
+## Four things AI got wrong
 
 1. **500 pada create yang sukses.** Handler membuat row, lalu memetakan DTO dari entity yang baru
    di-`Add` — navigation `Requester`/`Application` belum terisi, jadi `NullReferenceException`
@@ -66,6 +66,7 @@ Yang dicatat di sini bukan "AI menulis kode", tapi **keputusan mana yang berubah
 3. **Field error tidak sampai ke UI.** Error validasi di-flatten ke root ProblemDetails, bukan di
    dalam `errors`, sehingga form tidak bisa menandai field mana yang salah. Ditemukan oleh
    `RejectWithoutReason_IsValidationError`. Perbaikan: nesting `errors` sesuai konvensi.
+4. **Test yang tidak pernah jalan.** Satu test (`MissingOrUnknownIdentity_IsUnauthorized`) ditulis tanpa `[Fact]`, sehingga xUnit tidak menjalankannya dan tetap terlihat "hijau". Ketahuan saat membaca output warning build saat verifikasi dari clone bersih (`xUnit1013`). Perbaikan: atribut ditambahkan, test lulus, total jadi 32. Pelajarannya: jumlah test yang lulus tidak membuktikan semua test yang ditulis ikut berjalan.
 
 Dua temuan lain yang juga berasal dari test (bukan dari AI): urutan pengecekan approval memberi 403
 ke approver yang kalah race padahal seharusnya 409, dan timestamp kehilangan `DateTimeKind.Utc`
@@ -81,7 +82,7 @@ setelah roundtrip SQLite sehingga jam di UI bergeser. Keduanya diperbaiki dan di
   hanya `Api` yang tahu status HTTP. Frontend dipecah atoms/molecules/organisms/templates/pages dan
   animasi dipusatkan di `lib/motion.ts`.
 - **Why**: file endpoint 463 baris dan komponen 320 baris sulit ditinjau; memisahkan aturan bisnis
-  dari HTTP membuat aturan itu bisa dites tanpa database. Perilaku tidak berubah: 31 test tetap hijau
+  dari HTTP membuat aturan itu bisa dites tanpa database. Perilaku tidak berubah: 32 test tetap hijau
   dan `smoke.sh` 16/16.
 
 ## 7. Delegasi ke subagent

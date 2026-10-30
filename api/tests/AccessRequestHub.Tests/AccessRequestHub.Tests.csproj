@@ -7,6 +7,9 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- EF1002 is intentional here: these tests run raw SQL on purpose to prove the database
+         refuses tampering (audit triggers, CHECK constraints) even when application code is skipped. -->
+    <NoWarn>$(NoWarn);EF1002</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

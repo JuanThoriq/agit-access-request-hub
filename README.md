@@ -11,7 +11,7 @@ Fokusnya correctness dan engineering quality, bukan jumlah fitur.
 | Frontend | React 18 + TypeScript + Vite (SPA), GSAP untuk animasi |
 | Backend | ASP.NET Core .NET 8 — Controllers, 4 project berlapis |
 | Database | SQLite + EF Core 8 (migration + seed reproducible) |
-| Test | xUnit, 31 integration test lewat HTTP |
+| Test | xUnit, 32 integration test lewat HTTP |
 
 > Status: **Phase 1 selesai** (tag `phase-1-complete`). Phase 2 tidak dimulai karena dokumen
 > Change Request belum diberikan.
@@ -73,12 +73,12 @@ File database tidak di-commit. Skema selalu berasal dari
 
 ```bash
 cd api
-dotnet test                                   # 31 test
+dotnet test                                   # 32 test
 dotnet test --filter WorkflowTests            # satu kelas
 dotnet test --filter FullyQualifiedName~StaleVersion_IsConflict
 ```
 
-31 test integration, masing-masing memakai database SQLite sementara sendiri dan memanggil HTTP
+32 test integration, masing-masing memakai database SQLite sementara sendiri dan memanggil HTTP
 sungguhan (bukan unit test yang menembus lapisan). Yang diuji: alur approval, otorisasi,
 idempotency, concurrency, dan invariant database (trigger audit, CHECK, unique index, foreign key).
 
@@ -194,7 +194,7 @@ Command + Service; tidak ada repository generik di atas EF karena query-nya adal
 
 ```bash
 cd api && dotnet build          # 0 warning, 0 error
-cd api && dotnet test           # 31 passed
+cd api && dotnet test           # 32 passed
 cd frontend && npm run build    # type-check + production build
 bash scripts/smoke.sh           # 7 skenario lewat HTTP, API harus jalan
 ```

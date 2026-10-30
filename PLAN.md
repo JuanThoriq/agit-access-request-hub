@@ -168,7 +168,7 @@ Bagian ini sengaja dipertahankan: rencana yang berubah adalah bagian dari eviden
 7. **Temuan kecil saat verifikasi manual.** Timestamp kehilangan `DateTimeKind.Utc` setelah roundtrip
    SQLite sehingga JSON keluar tanpa `Z` dan jam di UI bergeser. Diperbaiki di mapper
    (`DateTime.SpecifyKind`). Dicatat sebagai R-09 di `REVIEW.md`.
-8. **Scope test bertambah.** Rencana 4 kelompok test; hasilnya 31 test karena hampir setiap bug yang
+8. **Scope test bertambah.** Rencana 4 kelompok test; hasilnya 32 test karena hampir setiap bug yang
    ditemukan saat smoke test dijadikan test regresi (duplikat paralel, versi basi, self-approval,
    constraint DB langsung).
 9. **Delegasi paralel tidak tersedia.** Dokumentasi direncanakan ditulis beberapa subagent sekaligus;
@@ -181,7 +181,7 @@ Bagian ini sengaja dipertahankan: rencana yang berubah adalah bagian dari eviden
     menjadi `api/` + `frontend/`, dan API dipecah menjadi 4 project berlapis
     (Api / Application / Infrastructure / Domain) dengan pola *vertical slice* per use case.
     Alasan: satu file endpoint 463 baris sulit ditinjau, dan aturan bisnis tercampur dengan kode HTTP.
-    Perilaku tidak berubah — dibuktikan 31 test yang sama tetap hijau dan `smoke.sh` 16/16.
+    Perilaku tidak berubah — dibuktikan 32 test yang sama tetap hijau dan `smoke.sh` 16/16.
 12. **Frontend memakai atomic design + GSAP (revisi).** Komponen dipecah atoms/molecules/organisms/
     templates/pages; animasi GSAP dipakai untuk list, panel detail, timeline, modal, dan banner.
     Animasi **dimatikan** saat `prefers-reduced-motion` dan saat tab tidak terlihat: animasi menyetel
