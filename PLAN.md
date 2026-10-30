@@ -132,4 +132,40 @@ tidak relevan untuk aplikasi internal.
 
 ## 8. Perubahan plan selama implementasi
 
-(diisi saat implementasi; jangan hapus bagian ini)
+Bagian ini sengaja dipertahankan: rencana yang berubah adalah bagian dari evidence, bukan noda.
+
+1. **Concurrency tidak cukup dicek di aplikasi.** Rencana awal: bandingkan `version` di handler.
+   Kenyataan: ada celah antara `SELECT` dan `UPDATE`. Ditambahkan `Version` sebagai concurrency token
+   (`IsConcurrencyToken()`), sehingga EF mengirim `UPDATE ... WHERE Version = @v`. Perbandingan di
+   handler tetap ada, tapi sekarang hanya fast path.
+2. **Urutan pengecekan approval berubah.** Awalnya otorisasi approver dicek sebelum versi. Test
+   concurrent membuktikan approver yang kalah race menerima 403 "bukan approver", padahal masalahnya
+   data basi. Urutan akhir: participant → terminal → versi → approver assignment → reason.
+   Konsekuensi yang diterima: user yang bukan participant tetap ditolak lebih dulu (403) agar tidak
+   membocorkan state ke orang yang tidak berhak melihat request.
+3. **Tambahan yang tidak direncanakan: requester tanpa manajer.** Semua request wajib melewati
+   manager approval; user tanpa manajer akan membuat request yang tidak pernah bisa selesai.
+   Ditambahkan penolakan 409 `manager_not_configured`. Ikutannya: seed diubah agar semua demo user
+   punya manajer (Bob), supaya aturan *requester tidak boleh approve request sendiri* bisa diuji
+   end-to-end memakai Carol yang juga System Owner CRM.
+4. **Append-only dibuat sebagai constraint database, bukan konvensi.** Rencana awal: tidak ada
+   endpoint update/delete untuk audit. Ditambah: trigger SQLite yang menolak `UPDATE`/`DELETE`,
+   karena "tidak ada endpoint" tidak melindungi dari bug di kode aplikasi.
+5. **Kontrak error dipersempit.** Rencana hanya menyebut "membedakan validation/forbidden/not
+   found/conflict". Implementasinya menambahkan `code` mesin-terbaca per kasus
+   (`version_conflict`, `idempotency_key_reuse`, `self_approval_forbidden`, …) karena UI perlu
+   membedakan UX-nya, bukan hanya status HTTP-nya.
+6. **Frontend tanpa router.** Rencana awal menyebut halaman list/detail/inbox. Implementasi memakai
+   satu halaman dengan tab + panel detail: jumlah kode lebih kecil, tidak ada state navigasi yang
+   harus disinkronkan dengan state server.
+7. **Temuan kecil saat verifikasi manual.** Timestamp kehilangan `DateTimeKind.Utc` setelah roundtrip
+   SQLite sehingga JSON keluar tanpa `Z` dan jam di UI bergeser. Diperbaiki di mapper
+   (`DateTime.SpecifyKind`). Dicatat sebagai R-09 di `REVIEW.md`.
+8. **Scope test bertambah.** Rencana 4 kelompok test; hasilnya 31 test karena hampir setiap bug yang
+   ditemukan saat smoke test dijadikan test regresi (duplikat paralel, versi basi, self-approval,
+   constraint DB langsung).
+9. **Delegasi paralel tidak tersedia.** Dokumentasi direncanakan ditulis beberapa subagent sekaligus;
+   provider model untuk subagent tidak terkonfigurasi di lingkungan ini, jadi seluruh dokumentasi
+   ditulis oleh satu agen. Tidak ada perubahan pada hasil teknis, hanya pada waktu.
+10. **Alat verifikasi tambahan.** `scripts/smoke.sh` dibuat agar 7 skenario demo bisa dibuktikan
+    dalam satu perintah tanpa membuka browser (dipakai juga sebagai bukti di README).

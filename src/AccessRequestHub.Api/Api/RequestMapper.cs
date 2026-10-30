@@ -9,6 +9,12 @@ public static class RequestMapper
 
     public static ApplicationRef ToRef(Application application) => new(application.Id, application.Name, ToRef(application.SystemOwner));
 
+    /// <summary>
+    /// SQLite has no DateTime type: values come back as Unspecified, so System.Text.Json would drop
+    /// the "Z" and every browser would re-interpret UTC as local time. Re-stamp the kind on the way out.
+    /// </summary>
+    private static DateTime AsUtc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
+
     public static AuditEventDto ToDto(AuditEvent e) => new(
         e.Id,
         e.EventType,
@@ -16,7 +22,7 @@ public static class RequestMapper
         e.FromStatus?.ToString(),
         e.ToStatus.ToString(),
         e.Reason,
-        e.CreatedAtUtc);
+        AsUtc(e.CreatedAtUtc));
 
     /// <summary>
     /// <paramref name="allowedActions"/> is a UI hint only: hiding a button is not authorization,
@@ -38,8 +44,8 @@ public static class RequestMapper
             AccessWorkflow.IsHighRisk(request.Environment, request.AccessLevel),
             request.PolicyVersion,
             request.Version,
-            request.CreatedAtUtc,
-            request.UpdatedAtUtc,
+            AsUtc(request.CreatedAtUtc),
+            AsUtc(request.UpdatedAtUtc),
             new AllowedActions(canAct, canAct),
             audit?.Select(ToDto).ToList());
     }
