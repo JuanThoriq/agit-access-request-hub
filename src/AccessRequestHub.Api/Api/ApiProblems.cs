@@ -10,11 +10,17 @@ namespace AccessRequestHub.Api.Api;
 public static class ApiProblems
 {
     public static IResult Validation(HttpContext ctx, Dictionary<string, List<string>> errors)
-        => TypedResults.Problem(
+    {
+        // Field errors live under "errors" (the ProblemDetails convention) so the UI can highlight
+        // inputs, while "code" stays a machine readable reason for the whole response.
+        var fields = errors.ToDictionary(e => e.Key, e => (object?)e.Value.ToArray());
+
+        return TypedResults.Problem(
             title: "Validation failed",
             statusCode: StatusCodes.Status400BadRequest,
             detail: "One or more fields are invalid.",
-            extensions: Extensions(ctx, "validation_failed", errors.ToDictionary(e => e.Key, e => (object?)e.Value.ToArray())));
+            extensions: Extensions(ctx, "validation_failed", new Dictionary<string, object?> { ["errors"] = fields }));
+    }
 
     public static IResult Unauthorized(HttpContext ctx, string code, string detail)
         => TypedResults.Problem(title: "Unauthorized", statusCode: StatusCodes.Status401Unauthorized, detail: detail,

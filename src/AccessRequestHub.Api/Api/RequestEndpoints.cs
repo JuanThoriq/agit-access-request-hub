@@ -197,6 +197,14 @@ public static class RequestEndpoints
             return ApiProblems.Validation(ctx, errors);
         }
 
+        // Every request needs a manager approval first, so a requester without a manager would create
+        // a request nobody can ever approve. Refuse loudly instead of storing a dead request.
+        if (user.ManagerId is null)
+        {
+            return ApiProblems.Conflict(ctx, "manager_not_configured",
+                "Your account has no manager assigned, so the mandatory manager approval step cannot run.");
+        }
+
         // environment/accessLevel/application are non-null here because of the checks above.
         var env = environment!.Value;
         var level = accessLevel!.Value;
@@ -249,7 +257,7 @@ public static class RequestEndpoints
         {
             // A concurrent retry passed the read above and won the insert. The unique index is what
             // makes this correct: the loser recovers by returning the winner's row, never a 500.
-            db.Entry(request).State = EntityState.Detached;
+            db.ChangeTracker.Clear(); // the failed insert (request + audit event) must not stay tracked
 
             var winner = await WithNavigations(db).AsNoTracking()
                 .FirstOrDefaultAsync(r => r.RequesterId == user.Id && r.ClientRequestId == clientRequestId, ct);
@@ -331,10 +339,19 @@ public static class RequestEndpoints
             return ApiProblems.NotFound(ctx, "request_not_found", $"Request {id} does not exist.");
         }
 
-        // Authorization before anything else about the payload: a user who may not act here must not
-        // learn whether their version was stale.
+        // Check order is deliberate:
+        // 1. invisible requests stay invisible (403), so a stranger learns nothing about state or version
+        // 2. terminal state (409) and stale version (409) come before the approver check, because a
+        //    participant acting on a version that already moved deserves "conflict", not "forbidden"
+        // 3. only then, self approval and the assigned approver for the current step (403)
+        if (!AccessWorkflow.CanView(user, request))
+        {
+            return ApiProblems.Forbidden(ctx, "not_a_participant",
+                "You are not the requester, their manager, the System Owner, or an Admin/Auditor.");
+        }
+
         var denial = AccessWorkflow.CheckApprover(user, request);
-        if (denial != Denial.None)
+        if (denial == Denial.RequestIsTerminal)
         {
             return ApiProblems.ForDenial(ctx, denial, request, user);
         }
@@ -361,6 +378,11 @@ public static class RequestEndpoints
             return VersionConflict(ctx, request);
         }
 
+        if (denial != Denial.None)
+        {
+            return ApiProblems.ForDenial(ctx, denial, request, user);
+        }
+
         var from = request.Status;
         var to = isApproval
             ? AccessWorkflow.StatusAfterApproval(from, AccessWorkflow.IsHighRisk(request.Environment, request.AccessLevel))!.Value
@@ -375,7 +397,7 @@ public static class RequestEndpoints
         {
             AccessRequestId = request.Id,
             ActorUserId = user.Id,
-            EventType = isApproval ? $"Approved:{from}" : $"Rejected:{from}",
+            EventType = isApproval ? "Approved" : "Rejected",
             FromStatus = from,
             ToStatus = to,
             Reason = reason,

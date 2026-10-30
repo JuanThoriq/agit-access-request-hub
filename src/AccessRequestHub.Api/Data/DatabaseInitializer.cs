@@ -52,12 +52,14 @@ public static class DatabaseInitializer
         logger.LogInformation("Seeding demo users and master data");
 
         // Fixed ids keep the demo deterministic and let the README/UI refer to the same people every run.
+        // Everyone but Bob reports to Bob: the self-approval rule needs a requester who is also a
+        // system owner and still has a manager (Carol on CRM).
         db.Users.AddRange(
             new User { Id = 1, Email = "alice@example.local", DisplayName = "Alice (Requester)", ManagerId = 2 },
             new User { Id = 2, Email = "bob@example.local", DisplayName = "Bob (Manager)" },
-            new User { Id = 3, Email = "carol@example.local", DisplayName = "Carol (System Owner - CRM)" },
-            new User { Id = 4, Email = "dana@example.local", DisplayName = "Dana (System Owner - Finance Portal)" },
-            new User { Id = 5, Email = "erin@example.local", DisplayName = "Erin (Admin/Auditor)", IsAdmin = true });
+            new User { Id = 3, Email = "carol@example.local", DisplayName = "Carol (System Owner - CRM)", ManagerId = 2 },
+            new User { Id = 4, Email = "dana@example.local", DisplayName = "Dana (System Owner - Finance Portal)", ManagerId = 2 },
+            new User { Id = 5, Email = "erin@example.local", DisplayName = "Erin (Admin/Auditor)", IsAdmin = true, ManagerId = 2 });
 
         db.Applications.AddRange(
             new Application { Id = 1, Name = "CRM", SystemOwnerId = 3 },
