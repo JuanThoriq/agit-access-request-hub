@@ -356,6 +356,16 @@ public static class RequestEndpoints
             return ApiProblems.ForDenial(ctx, denial, request, user);
         }
 
+        if (body.Version.Value != request.Version)
+        {
+            return VersionConflict(ctx, request);
+        }
+
+        if (denial != Denial.None)
+        {
+            return ApiProblems.ForDenial(ctx, denial, request, user);
+        }
+
         if (!isApproval && string.IsNullOrWhiteSpace(body.Reason))
         {
             return ApiProblems.Validation(ctx, new Dictionary<string, List<string>>
@@ -371,16 +381,6 @@ public static class RequestEndpoints
             {
                 ["reason"] = [$"reason must be at most {ReasonMaxLength} characters."]
             });
-        }
-
-        if (body.Version.Value != request.Version)
-        {
-            return VersionConflict(ctx, request);
-        }
-
-        if (denial != Denial.None)
-        {
-            return ApiProblems.ForDenial(ctx, denial, request, user);
         }
 
         var from = request.Status;
