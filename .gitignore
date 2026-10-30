@@ -10,11 +10,10 @@ obj/
 *.db-wal
 App_Data/
 
-
 # Node / frontend
 node_modules/
-web/dist/
-.vite/
+frontend/dist/
+frontend/.vite/
 
 # Local env
 .env
@@ -23,6 +22,9 @@ web/dist/
 # Assessment material is confidential; keep it out of the repository
 task.txt
 *.pdf
+
+# Private learning notes (own study material, not part of the submission)
+docs/
 
 # OS
 .DS_Store

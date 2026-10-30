@@ -51,7 +51,7 @@ Yang dicatat di sini bukan "AI menulis kode", tapi **keputusan mana yang berubah
 - **Accepted / changed**: **rejected**. Ini aplikasi internal di belakang API .NET, identitas datang
   dari header, tidak butuh SEO/SSR. Next.js menambah runtime server kedua di depan API dan memancing
   logika otorisasi tersebar di dua tempat. Dipilih Vite + React + TypeScript (SPA statis, satu
-  trust boundary). Konsekuensinya dicatat di `docs/02-ARSITEKTUR.md`.
+  trust boundary). Konsekuensinya dicatat di `PLAN.md` §2.
 
 ## Three things AI got wrong
 
@@ -70,3 +70,25 @@ Yang dicatat di sini bukan "AI menulis kode", tapi **keputusan mana yang berubah
 Dua temuan lain yang juga berasal dari test (bukan dari AI): urutan pengecekan approval memberi 403
 ke approver yang kalah race padahal seharusnya 409, dan timestamp kehilangan `DateTimeKind.Utc`
 setelah roundtrip SQLite sehingga jam di UI bergeser. Keduanya diperbaiki dan dicatat di `REVIEW.md`.
+
+## 6. Struktur repo berlapis dan frontend atomic design (revisi)
+
+- **Ask**: "Rapikan struktur supaya clean code: backend berlapis (Api/Application/Domain/
+  Infrastructure + `Features/<UseCase>`), frontend atomic design + GSAP."
+- **Suggestion**: mempertahankan satu project API dengan folder-folder saja (perubahan paling kecil).
+- **Accepted / changed**: **changed**. Dipecah menjadi 4 project dengan arah dependensi
+  `Api → Application → Infrastructure → Domain`; `Application` mengembalikan `Result<T>` sehingga
+  hanya `Api` yang tahu status HTTP. Frontend dipecah atoms/molecules/organisms/templates/pages dan
+  animasi dipusatkan di `lib/motion.ts`.
+- **Why**: file endpoint 463 baris dan komponen 320 baris sulit ditinjau; memisahkan aturan bisnis
+  dari HTTP membuat aturan itu bisa dites tanpa database. Perilaku tidak berubah: 31 test tetap hijau
+  dan `smoke.sh` 16/16.
+
+## 7. Delegasi ke subagent
+
+- **Ask**: "Pecah pekerjaan dokumentasi/frontend ke beberapa subagent."
+- **Suggestion**: 4 subagent paralel untuk dokumentasi, lalu 1 subagent untuk restrukturisasi frontend.
+- **Accepted / changed**: **gagal karena environment, dua kali**. Percobaan pertama: provider default
+  (`anthropic`) tidak punya API key. Percobaan kedua memakai model `opencode-go`: subagent berhenti
+  pada guard "jangan kerja lewat tengah malam" dan tidak menulis apa pun. Semua pekerjaan akhirnya
+  dikerjakan satu agen — tidak ada dampak teknis, hanya waktu.

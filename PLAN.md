@@ -22,26 +22,33 @@ bisa dijelaskan. Bukan aplikasi luas.
 ## 2. Arsitektur
 
 ```
-┌──────────────────────────┐         ┌────────────────────────────────────────┐
-│ web/  React SPA (Vite)   │  HTTP   │ src/AccessRequestHub.Api  (.NET 8)     │
-│ - user switcher          │ ──────► │ Minimal API + endpoint filters         │
-│ - create / inbox / detail│  JSON   │ Domain: AccessWorkflow (pure)          │
-│ - conflict & error state │ ◄────── │ EF Core 8 + SQLite                     │
-└──────────────────────────┘         └───────────────────┬────────────────────┘
-                                                          │
-                                            ┌─────────────▼─────────────┐
-                                            │ SQLite (file)             │
-                                            │ FK, UNIQUE, CHECK, trigger│
-                                            └───────────────────────────┘
+┌──────────────────────────┐         ┌──────────────────────────────────────────┐
+│ frontend/  React + Vite  │  HTTP   │ api/src/AccessRequestHub.Api  (.NET 8)   │
+│ - user switcher          │ ──────► │ Controllers + CurrentUserMiddleware       │
+│ - create / inbox / detail│  JSON   │                  │                       │
+│ - conflict & error state │ ◄────── │ Application  Features/<UseCase>/Service   │
+│ - GSAP (reduced-motion   │         │                  │                       │
+│   aware)                 │         │ Domain  AccessWorkflow (aturan murni)     │
+└──────────────────────────┘         │                  ▲                       │
+                                     │ Infrastructure  EF Core 8 + SQLite        │
+                                     └──────────────────┬───────────────────────┘
+                                                        │
+                                          ┌─────────────▼─────────────┐
+                                          │ SQLite (file)             │
+                                          │ FK, UNIQUE, CHECK, trigger│
+                                          └───────────────────────────┘
 ```
 
 Lapisan (dan aturannya):
 
-1. **Contracts** — DTO request/response. Tidak pernah dipakai sebagai entity.
-2. **Domain** — `AccessWorkflow`: aturan bisnis murni (high-risk? transisi apa yang sah? siapa yang boleh?).
-   Tanpa EF, tanpa HTTP → bisa dites tanpa database.
-3. **Data** — `AppDbContext`, konfigurasi constraint, seed.
-4. **Api** — endpoint tipis: resolve identity → validasi → panggil domain → simpan → map ke response.
+1. **Domain** — entity + `AccessWorkflow`: aturan bisnis murni (high-risk? transisi apa yang sah?
+   siapa yang boleh?). Tanpa EF, tanpa HTTP → bisa dites tanpa database.
+2. **Infrastructure** — `AppDbContext`, konfigurasi constraint, migration, seed, SQLite pragma.
+3. **Application** — satu folder per use case (`Features/Requests/CreateRequest`, `Transitions`, …)
+   berisi Command + Service. Mengembalikan `Result<T>` (success/validation/forbidden/conflict),
+   **tidak** mengetahui status code HTTP.
+4. **Api** — controller tipis: resolve identity → panggil satu use case → terjemahkan `Result<T>`
+   ke ProblemDetails/response. Satu-satunya lapisan yang tahu HTTP.
 
 **Trust boundary**: identity datang dari header `X-Demo-User` yang di-resolve server ke row `Users`.
 Requester **tidak pernah** diambil dari body. Semua authorization dievaluasi di server per request;
@@ -169,3 +176,17 @@ Bagian ini sengaja dipertahankan: rencana yang berubah adalah bagian dari eviden
    ditulis oleh satu agen. Tidak ada perubahan pada hasil teknis, hanya pada waktu.
 10. **Alat verifikasi tambahan.** `scripts/smoke.sh` dibuat agar 7 skenario demo bisa dibuktikan
     dalam satu perintah tanpa membuka browser (dipakai juga sebagai bukti di README).
+
+11. **Struktur repo dirapikan (revisi).** Setelah Phase 1 selesai, struktur `src/` + `web/` diubah
+    menjadi `api/` + `frontend/`, dan API dipecah menjadi 4 project berlapis
+    (Api / Application / Infrastructure / Domain) dengan pola *vertical slice* per use case.
+    Alasan: satu file endpoint 463 baris sulit ditinjau, dan aturan bisnis tercampur dengan kode HTTP.
+    Perilaku tidak berubah — dibuktikan 31 test yang sama tetap hijau dan `smoke.sh` 16/16.
+12. **Frontend memakai atomic design + GSAP (revisi).** Komponen dipecah atoms/molecules/organisms/
+    templates/pages; animasi GSAP dipakai untuk list, panel detail, timeline, modal, dan banner.
+    Animasi **dimatikan** saat `prefers-reduced-motion` dan saat tab tidak terlihat: animasi menyetel
+    `opacity:0` di awal, sedangkan tab background tidak menjalankan `requestAnimationFrame`, sehingga
+    konten bisa tampak kosong kalau animasi tetap dipaksakan.
+13. **Catatan belajar tidak di-commit.** Dokumen materi belajar bersifat catatan pribadi dan
+    dikeluarkan dari repo; yang tetap ada hanya dokumen yang diminta assessment
+    (`PLAN`, `AI_USAGE`, `REVIEW`, `INTEGRITY`, `README`).

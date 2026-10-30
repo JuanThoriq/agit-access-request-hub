@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    Application uses the DbContext directly (no repository layer): the queries are the feature,
+    and an extra abstraction here would only move EF code one folder away.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\AccessRequestHub.Domain\AccessRequestHub.Domain.csproj" />
+    <ProjectReference Include="..\AccessRequestHub.Infrastructure\AccessRequestHub.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

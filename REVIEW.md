@@ -17,12 +17,14 @@ Kolom **Evidence** menunjuk test atau perintah yang membuktikan status, bukan op
 | R-08 | Audit | Tabel audit bisa diubah/dihapus oleh kode aplikasi (riwayat bisa ditulis ulang oleh bug) | Medium | Trigger SQLite menolak `UPDATE`/`DELETE` pada `AuditEvents` | Fixed | `AuditEvents_CannotBeUpdatedOrDeletedByApplicationCode` |
 | R-09 | Data | SQLite tidak menyimpan `DateTimeKind`; JSON keluar tanpa `Z` sehingga jam di UI bergeser sesuai timezone | Medium | `DateTime.SpecifyKind(..., Utc)` di mapper response | Fixed | respons `/api/requests/{id}` sebelum/sesudah: `...T18:07:14` → `...T18:07:14Z` |
 | R-10 | Workflow | Requester tanpa manajer bisa membuat request yang tidak akan pernah bisa di-approve | Medium | Tolak dengan 409 `manager_not_configured` | Fixed | `RequesterWithoutManager_CannotSubmitAnUnapprovableRequest` |
-| R-11 | Scale | `/api/requests/all` tidak berpaginasi | Low | Deferred — volume demo kecil, UI memakai satu list | Accepted | `docs/08-TRADEOFFS.md` |
+| R-11 | Scale | `/api/requests/all` tidak berpaginasi | Low | Deferred — volume demo kecil, UI memakai satu list | Accepted | `PLAN.md` §2 |
 | R-12 | Abuse | Create/approve belum di-rate-limit | Low | Deferred — aplikasi lokal, tanpa auth nyata | Accepted | bagian *Deferred work* |
 | R-13 | Privacy | Email user muncul di log request | Low | Accepted untuk lingkungan lokal; di produksi akan di-hash/di-mask | Accepted | `Program.cs` request logging |
-| R-14 | Storage | SQLite hanya satu writer; `busy_timeout` 5000 ms menyerap burst kecil | Medium | Accepted dengan jalur upgrade ke PostgreSQL yang sudah ditulis | Accepted | `docs/02-ARSITEKTUR.md` |
-| R-15 | XSS | Justifikasi dan alasan reject disimpan apa adanya | Low | Tidak berbahaya karena React meng-escape saat render; tidak ada `dangerouslySetInnerHTML` | Verified | `web/src/components/RequestDetail.tsx` |
-| R-16 | CSRF | Tidak ada proteksi CSRF | Info | Tidak diperlukan: identitas lewat header `X-Demo-User`, bukan cookie, jadi browser tidak bisa mengirim kredensial otomatis | Verified | `web/src/api.ts`, `CurrentUserMiddleware.cs` |
+| R-14 | Storage | SQLite hanya satu writer; `busy_timeout` 5000 ms menyerap burst kecil | Medium | Accepted dengan jalur upgrade ke PostgreSQL yang sudah ditulis | Accepted | `PLAN.md` §2 |
+| R-15 | XSS | Justifikasi dan alasan reject disimpan apa adanya | Low | Tidak berbahaya karena React meng-escape saat render; tidak ada `dangerouslySetInnerHTML` | Verified | `frontend/src/organisms/RequestDetail.tsx`; tidak ada `dangerouslySetInnerHTML` di `frontend/src` |
+| R-16 | CSRF | Tidak ada proteksi CSRF | Info | Tidak diperlukan: identitas lewat header `X-Demo-User`, bukan cookie, jadi browser tidak bisa mengirim kredensial otomatis | Verified | `frontend/src/lib/api.ts`, `api/src/AccessRequestHub.Api/Middleware/CurrentUserMiddleware.cs` |
+| R-17 | Struktur | `Application` mereferensikan `Infrastructure` (bukan sebaliknya) agar use case bisa memakai `AppDbContext` langsung tanpa repository generik | Low | Accepted: query-nya adalah fiturnya; abstraksi tambahan hanya memindahkan kode EF satu folder. Titik ganti sumber data tetap jelas (`Infrastructure`) | Accepted | `api/src/AccessRequestHub.Application/Features/Requests/*` |
+| R-18 | Frontend | Animasi GSAP menyetel `opacity:0` di awal; tab background tidak menjalankan `requestAnimationFrame`, sehingga konten bisa tampak kosong | Medium | Animasi hanya dijalankan saat `document.visibilityState === 'visible'` dan tidak saat `prefers-reduced-motion` | Fixed | `frontend/src/lib/motion.ts`, dicek di browser (`timelineOpacity` 0 → 1) |
 
 ## Yang sengaja tidak dikerjakan (deferred)
 

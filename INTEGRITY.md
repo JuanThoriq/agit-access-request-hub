@@ -19,7 +19,7 @@ External repositories/snippets copied or adapted: None
 
 ## What "own work" means here, concretely
 
-- Setiap keputusan arsitektur di `PLAN.md` dan `docs/08-TRADEOFFS.md` punya alasan tertulis,
+- Setiap keputusan arsitektur di `PLAN.md` punya alasan tertulis,
   termasuk yang **ditolak** (Next.js, PostgreSQL, OAuth, message broker).
 - Semua kode yang di-generate sudah dibaca ulang dan diubah minimal sekali ketika test menemukan
   cacat — daftar jujurnya ada di `AI_USAGE.md` bagian *Three things AI got wrong*.
