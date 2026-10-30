@@ -1,0 +1,68 @@
+using System.Data.Common;
+using AccessRequestHub.Api.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
+
+namespace AccessRequestHub.Api.Data;
+
+/// <summary>
+/// Applies the pragmas this app depends on for every pooled connection: foreign keys are actually
+/// enforced, and a writer waits briefly instead of failing instantly with "database is locked".
+/// </summary>
+public sealed class SqlitePragmaInterceptor : DbConnectionInterceptor
+{
+    private const string Pragmas = "PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL;";
+
+    public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData) => Apply(connection);
+
+    public override Task ConnectionOpenedAsync(
+        DbConnection connection,
+        ConnectionEndEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        Apply(connection);
+        return Task.CompletedTask;
+    }
+
+    private static void Apply(DbConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = Pragmas;
+        command.ExecuteNonQuery();
+    }
+}
+
+/// <summary>
+/// Rebuilds the database from migrations + seed. Idempotent: safe to run on every startup,
+/// and it is the only way the schema is created (no manual SQL steps in the README).
+/// </summary>
+public static class DatabaseInitializer
+{
+    public static async Task InitializeAsync(AppDbContext db, ILogger logger, CancellationToken ct = default)
+    {
+        await db.Database.MigrateAsync(ct);
+
+        if (await db.Users.AnyAsync(ct))
+        {
+            logger.LogInformation("Database already seeded, skipping seed");
+            return;
+        }
+
+        logger.LogInformation("Seeding demo users and master data");
+
+        // Fixed ids keep the demo deterministic and let the README/UI refer to the same people every run.
+        db.Users.AddRange(
+            new User { Id = 1, Email = "alice@example.local", DisplayName = "Alice (Requester)", ManagerId = 2 },
+            new User { Id = 2, Email = "bob@example.local", DisplayName = "Bob (Manager)" },
+            new User { Id = 3, Email = "carol@example.local", DisplayName = "Carol (System Owner - CRM)" },
+            new User { Id = 4, Email = "dana@example.local", DisplayName = "Dana (System Owner - Finance Portal)" },
+            new User { Id = 5, Email = "erin@example.local", DisplayName = "Erin (Admin/Auditor)", IsAdmin = true });
+
+        db.Applications.AddRange(
+            new Application { Id = 1, Name = "CRM", SystemOwnerId = 3 },
+            new Application { Id = 2, Name = "Finance Portal", SystemOwnerId = 4 });
+
+        await db.SaveChangesAsync(ct);
+    }
+}

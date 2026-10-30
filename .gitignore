@@ -8,7 +8,8 @@ obj/
 *.db
 *.db-shm
 *.db-wal
-data/
+App_Data/
+
 
 # Node / frontend
 node_modules/
